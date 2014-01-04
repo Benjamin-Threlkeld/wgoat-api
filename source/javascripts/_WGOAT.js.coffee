@@ -31,30 +31,52 @@ class WGOAT
 
 	### Green light... Go Go Go! ###
 	run: ->
-		d = @figureDateRange @options.dateRange
-		console.log(d.start.getDate())
+		@cantThinkOfName()
 
+	### cantThinkOfName ###
+	cantThinkOfName: () ->
+		d = @figureDateRange @options.dateRange
+		datesForFiles = {dates: {}, keys: []}
+		# for every day from date until end date
+		for day in [0..d.to]
+			dateOffset = new Date(d.from.getTime())
+			# add a day to the date
+			dateOffset.setDate d.from.getDate() + day
+			# format date
+			name = "#{dateOffset.getDate()}.#{dateOffset.getMonth()}.#{dateOffset.getFullYear() - 2000}.json"
+			# add formatted date and date time to object
+			datesForFiles.dates[name] = dateOffset.getTime()
+			# add formatted date as keys to array
+			datesForFiles.keys.push name
+			#get the file
+			@get(name)
+
+
+		# `for(var i = datesForFiles.keys.length - 1; i > -1; i--) {
+		# 	thisDate = new Date(datesForFiles.dates[datesForFiles.keys[i]]);
+		# 	console.log(thisDate.getDate());
+		# }`
+		return
+
+	
 	### abstracting dateRange ###
 	figureDateRange: (d) ->
-		# basic functionality
-		start = new Date()
+		# basic functionality. Not sure how much error checking should be done
+		# new date from array
+		from = new Date((if d.from[2] > 99 then d.from[2] else 2000 + d.from[2]), d.from[1], d.from[0])
 		to = d.to
 
-		if Object.prototype.toString.call d.from is '[object Array]' && d.from.length < 4
-			start.setMonth d.from[0], d.from[1]
-			start.setFullYear(if d.from[2] > 99 then d.from[2] else 2000 + d.from[2])
-		else 
-			throw new Error "DateRange: must have three indexed in the array eg: [d,m,yy]"
-		
-		console.log d.to
-		if ((parseInt d.to || 0))
-			console.log "pass " + to
-		else
-			console.log "fail " + to
-		{start: start, to: to}
+		#if Object.prototype.toString.call d.from is '[object Array]' && d.from.length < 4
+			# if to is a number and not empty
+		if ((parseInt d.to, 10 || 0))
+			to = d.to
+		{from: from, to: to}
+
+		#else 
+		#	throw new Error "DateRange: must have three indexed in the array eg: [d,m,yy]"
 
 	### get files, add to object ###
-	get: (fileDate) ->
+	get: (filename) ->
 		ajax = new @Ajax
 			url: window.location + @options.dir + filename,
 			contentType: 'application/json'
