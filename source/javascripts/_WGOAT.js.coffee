@@ -14,28 +14,21 @@ class WGOAT
 			# thats good for now
 
 		# add params to options if any
+		@objectMergeRecursive @options, params;
 
+	### Merge/Overwrite Object/Array ###
+	objectMergeRecursive: (obj1, obj2) ->
+		if Object.prototype.toString.call(obj1) is '[object Array]' &&
+		   Object.prototype.toString.call(obj2) is '[object Array]'
+			for row, i in obj2
+				obj1[i] = obj2[i]
+		else
+			for k of obj2
+				if typeof obj1[k] is 'object' and typeof obj2[k] is 'object'
+					@objectMergeRecursive obj1[k], obj2[k]
+				else
+					obj1[k] = obj2[k]
 
-		@eachRecursive(params, @options
-			(k, test) ->
-				console.log test[k]
-				#@options[k] = params[k]
-				return
-				#@options[option] = value for option, value of params
-		)
-		console.log @options
-	### for each, but recursive ###
-	eachRecursive: (object, test, callback) ->
-		if !callback?
-			throw new Error "eachRecursive: requires a callback. Use an argument for the key"
-
-		for k of object
-			console.log("run")
-			if object[k]? and typeof object[k] is 'object'
-				@eachRecursive(object[k], test, callback)
-			else
-				callback(k, test)
-	
 	### Green light... Go Go Go! ###
 	run: ->
 		d = @figureDateRange @options.dateRange
