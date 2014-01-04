@@ -31,7 +31,32 @@ class WGOAT
 
 	### Green light... Go Go Go! ###
 	run: ->
-		@cantThinkOfName()
+		@activeAjaxConnections = 0
+		@events = {events: {},keys: []}
+		@eventsDates = @cantThinkOfName()
+
+	### populateEventsObject ###
+	parseObject: (filename, obj) ->
+		console.log(filename)
+		# this could be where it formats the dates, validate strings and stuff
+		@events.events[filename] = obj
+		@events.keys.push filename
+		return
+
+	### parseEvents ###
+	parseEvents: ->
+		eachEvent = (event)->
+			# do something on each event
+			console.log(event.startTime)
+
+		eventsHTML = ""
+		# ready to do awesome
+		for _day in [0..@events.keys.length - 1]
+			### Do stuff for each day ###
+			for _event in [0..@events.events[@events.keys[_day]].length - 1]
+				### Do stuff for day ###
+				eachEvent @events.events[@events.keys[_day]][_event]
+		
 
 	### cantThinkOfName ###
 	cantThinkOfName: () ->
@@ -49,15 +74,13 @@ class WGOAT
 			# add formatted date as keys to array
 			datesForFiles.keys.push name
 			#get the file
-			@get(name)
-
-
+			@get name
+		
 		# `for(var i = datesForFiles.keys.length - 1; i > -1; i--) {
 		# 	thisDate = new Date(datesForFiles.dates[datesForFiles.keys[i]]);
 		# 	console.log(thisDate.getDate());
 		# }`
-		return
-
+		datesForFiles
 	
 	### abstracting dateRange ###
 	figureDateRange: (d) ->
@@ -77,33 +100,51 @@ class WGOAT
 
 	### get files, add to object ###
 	get: (filename) ->
+		
+		@activeAjaxConnections++ # add an open connection
 		ajax = new @Ajax
-			url: window.location + @options.dir + filename,
-			contentType: 'application/json'
+			scope: @
+			#requestHeaders: [["filename", filename]]
+			uri: window.location + @options.dir + filename,
+			responseType: 'json'
 			callback: (res) ->
-				if res.status is 200 || res.status is 304
-					console.log "got it"
-				else
-					console.log "error"
+				if res.readyState is 2
+					@activeAjaxConnections-- # connection has returned headers
+					if res.status is 404 then res.abort() # if error page then abort loading
+				if res.readyState is 4 # if loading is done
+					if res.status is 200 || res.status is 304 # if OK or Not Modified
+						@parseObject filename, res.response # add the object to another
+					if @activeAjaxConnections is 0 # if all the requests have been returned and are done loading
+						@parseEvents()
 
 		ajax.doGet()
 
 	### Abstract Ajax ###
 	Ajax: (options) ->
-		console.log "running ajax"
+		processRequest = ->
+			if !options.scope? then options.scope = this
+
+			options.callback.call(options.scope, xhr) if options.callback?
+
 		xhr = new XMLHttpRequest()
-
-		xhr.onload = @processRequest
-
-		processRequest: ->
-			if options.callback then options.callback xhr
+		xhr.onreadystatechange = processRequest
 
 		@doGet = ->
-			xhr.open "GET", options.url, true
-			xhr.overrideMimeType options.contentType
+			xhr.open "GET", options.uri, true
+			if typeof options.requestHeaders is 'object'
+				for r,i in options.requestHeaders
+					xhr.setRequestHeader(options.requestHeaders[i][0],options.requestHeaders[i][1])
+			xhr.responseType = options.responseType
 			xhr.send null
 		return
 
+	### updateCalendar ###
+	updateCalendar: ->
+		attachToOnload ->
+			cal = document.querySelector(@options.calendarElement)
+			if not cal?
+				throw new Error "updateCalendar: Calendar Element was not found using selector #{@options.calendarElement}"
+				
 	### attachToOnload ###
 	attachToOnLoad: (newFunction) ->
 		console.log("running attachToOnLoad")
