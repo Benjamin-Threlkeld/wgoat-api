@@ -320,7 +320,7 @@
 }
 ,{
   "title": "This Aweseome Event",
-  "startTime": "3pm",
+  "startTime": "10pm",
   "endTime": "0803",
   "category": "Food",
   "tags": ["awesome", "this thing", "evil", "hot dogs", "bacon", "water", "october"],
@@ -416,7 +416,7 @@
 },
 {
   "title": "This Aweseome Event",
-  "startTime": "3pm",
+  "startTime": "3am",
   "endTime": "0803",
   "category": "Food",
   "tags": ["awesome", "this thing", "evil", "hot dogs", "bacon", "water", "october"],

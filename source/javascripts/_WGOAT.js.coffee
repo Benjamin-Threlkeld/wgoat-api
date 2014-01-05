@@ -10,24 +10,11 @@ class WGOAT
 			links: true
 			tags: true
 			images: true
-			sortBy: 'most-recent'
+			sortBy: 'soonest' # most-recent
 			# thats good for now
 
 		# add params to options if any
 		@objectMergeRecursive @options, params;
-
-	### Merge/Overwrite Object/Array ###
-	objectMergeRecursive: (obj1, obj2) ->
-		if Object.prototype.toString.call(obj1) is '[object Array]' &&
-		   Object.prototype.toString.call(obj2) is '[object Array]'
-			for row, i in obj2
-				obj1[i] = obj2[i]
-		else
-			for k of obj2
-				if typeof obj1[k] is 'object' and typeof obj2[k] is 'object'
-					@objectMergeRecursive obj1[k], obj2[k]
-				else
-					obj1[k] = obj2[k]
 
 	### Green light... Go Go Go! ###
 	run: ->
@@ -35,29 +22,69 @@ class WGOAT
 		@events = {events: {},keys: []}
 		@eventsDates = @cantThinkOfName()
 
+
 	### populateEventsObject ###
-	parseObject: (filename, obj) ->
-		console.log(filename)
-		# this could be where it formats the dates, validate strings and stuff
-		@events.events[filename] = obj
-		@events.keys.push filename
+	parseObject: (fileDate, object) ->
+		# this could be where it formats the dates and times, validate strings and stuff
+		# loop over the file of events
+		for event in [0..object.length - 1]
+			# insert props to object
+			object[event]['time'] = {}
+			if object[event].startTime? then object[event].time['startTime'] = @timeFromString(object[event].startTime).getTime()
+			if object[event].endTime? then object[event].time['endTime'] = @timeFromString(object[event].endTime).getTime()
+			# will be usefull when sorting most-recent
+			object[event].date = @eventsDates.dates[fileDate]
+			object[event].fromFile = fileDate
+
+		@events.events[fileDate] = object
+		@events.keys.push fileDate
 		return
 
+	eachEvent: (event) ->
+		# time stuff
+		startTime = new Date(event.time.startTime)
+		endTime = new Date(event.time.endTime)
+		startTime12Hour = @timeTo12Hour(startTime,"0M")
+		endTime12Hour = @timeTo12Hour(endTime,"0M")
+		eventHTML = "event starts at #{startTime12Hour.getHours}:#{startTime12Hour.getMinutes+startTime12Hour.getPeriod}"
+	
 	### parseEvents ###
 	parseEvents: ->
-		eachEvent = (event)->
-			# do something on each event
-			console.log(event.startTime)
-
+		@sort @options.sortBy
+		# do something on each event
 		eventsHTML = ""
 		# ready to do awesome
 		for _day in [0..@events.keys.length - 1]
 			### Do stuff for each day ###
 			for _event in [0..@events.events[@events.keys[_day]].length - 1]
 				### Do stuff for day ###
-				eachEvent @events.events[@events.keys[_day]][_event]
+				eventsHTML += @eachEvent @events.events[@events.keys[_day]][_event]
+				#console.log(@utils.timeFromString(event.startTime).getHours())
 		
+		console.log(eventsHTML)
+	
+	### sort ###
+	sort: (method) ->
+		console.log "sorting"
+		switch method
+			when "most-recent" then @sort_mostRecent()
+			when "soonest" then @sort_soonest()
+			else throw new Error "Sort: no sort sort method of that sort :)"
+	
+	### sorting methods ###
+	sort_soonest: ->
+		console.log "sorting soonest"
+		console.log @events
+		@events.keys.sort();
+		for _day in [0..@events.keys.length - 1]
+			for _event in [0..@events.events[@events.keys[_day]].length - 1]
+				@events.events[@events.keys[_day]].sort (a,b) ->
+					a.time.startTime - b.time.startTime
+	
+	sort_mostRecent: ->
+		console.log "sorting most recent"
 
+	
 	### cantThinkOfName ###
 	cantThinkOfName: () ->
 		d = @figureDateRange @options.dateRange
@@ -145,6 +172,11 @@ class WGOAT
 			if not cal?
 				throw new Error "updateCalendar: Calendar Element was not found using selector #{@options.calendarElement}"
 				
+
+	###            ###
+	###  Utilities ###
+	###            ###
+
 	### attachToOnload ###
 	attachToOnLoad: (newFunction) ->
 		console.log("running attachToOnLoad")
@@ -156,6 +188,86 @@ class WGOAT
 				oldOnLoad()
 				newFunction()
 
+	### Time From String ###
+	timeFromString: (timeString) ->
+		# This eats a string argument that is in some form of legible time and poops out a Date Object
+		# Examples of valid times
+		# `2pm` `2Am` `1403` `2:03p`
+		#
+
+		# match |`digit`|`Passive`:|`digit``digit`|`whitespace`|`a` or `p`|case insensitive
+		Matcher = /(\d+)(?::(\d\d))?\s*([ap]?)/i
+		timeParsed = timeString.match(Matcher)
+		
+		#timeParsed[0] is the first group
+		#timeParsed[1] is the hour. if it is a 24hour time minute is null
+		#timeParsed[2] is the minute
+		#timeParsed[3] is "" if p does not exist else is "p" or "P"
+		
+		timeParsed[1] = parseInt(timeParsed[1], 10)
+		timeParsed[2] = parseInt(timeParsed[2], 10)
+		
+		# time Hour, length of string
+		timeParsedString = timeParsed[1] + ""
+		timeParsedLen = timeParsedString.length
+		addHours = 0
+		tHours = timeParsed[1]
+		tMinutes = timeParsed[2]
+		
+		#console.log(timeParsed);
+		d = new Date() # set new date object
+		# if 12 hour time
+		if timeParsed[3].toUpperCase() is "P" and timeParsed[1] isnt 12
+			addHours = 12
+		# if 24 hour time
+		else if timeParsed[3] is "" and isNaN(timeParsed[2])
+			tHours = timeParsedString.substr(0, timeParsedLen - 2)
+			tMinutes = timeParsedString.substr(timeParsedLen - 2)
+		
+			d.setHours parseInt(tHours, 10)
+			d.setMinutes parseInt(tMinutes, 10)
+		d.setHours parseInt(tHours, 10) + addHours
+		d.setMinutes parseInt(tMinutes, 10) or 0
+		d
+	
+	### Time To 12 Hour ###
+	timeTo12Hour: (dObj, arg1, arg2, arg3) ->
+		hours = dObj.getHours()
+		minutes = dObj.getMinutes()
+		h = undefined
+		m = undefined
+		p = undefined
+		if hours is 12
+			h = hours; m = minutes; p = "pm"
+		else if hours > 12
+			h = hours - 12; m = minutes; p = "pm"
+		else
+			h = hours; m = minutes; p = "am"
+
+		if arg1 is "0M" || arg2 is "0M" || arg3 is "0M"
+			if m < 10
+				m = "0" + m
+
+		if arg1 is "0H" || arg2 is "0H" || arg3 is "0H"
+			if h < 10
+				h = "0" + h
+
+		getHours: h
+		getMinutes: m
+		getPeriod: p
+
+	### Merge/Overwrite Object/Array ###
+	objectMergeRecursive: (obj1, obj2) ->
+		if Object.prototype.toString.call(obj1) is '[object Array]' &&
+		   Object.prototype.toString.call(obj2) is '[object Array]'
+			for row, i in obj2
+				obj1[i] = obj2[i]
+		else
+			for k of obj2
+				if typeof obj1[k] is 'object' and typeof obj2[k] is 'object'
+					@objectMergeRecursive obj1[k], obj2[k]
+				else
+					obj1[k] = obj2[k]
 
 root = window
 root.WGOAT = WGOAT

@@ -6,6 +6,6 @@ wgoat = new WGOAT
 		from: [1,1,14]
 		to: 4
 	dir: 'events/'
-	sortBy: 'most-recent'
+	sortBy: 'soonest'
 
-wgoat.run();
+wgoat.run()
