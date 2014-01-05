@@ -1,4 +1,5 @@
 class WGOAT
+
 	constructor: (params) ->
 		# default options
 		@options =
@@ -66,7 +67,6 @@ class WGOAT
 	
 	### sort ###
 	sort: (method) ->
-		console.log "sorting"
 		switch method
 			when "most-recent" then @sort_mostRecent()
 			when "soonest" then @sort_soonest()
@@ -74,8 +74,6 @@ class WGOAT
 	
 	### sorting methods ###
 	sort_soonest: ->
-		console.log "sorting soonest"
-		console.log @events
 		@events.keys.sort();
 		for _day in [0..@events.keys.length - 1]
 			for _event in [0..@events.events[@events.keys[_day]].length - 1]
@@ -83,7 +81,7 @@ class WGOAT
 					a.time.startTime - b.time.startTime
 	
 	sort_mostRecent: ->
-		console.log "sorting most recent"
+		return
 
 	
 	### cantThinkOfName ###
@@ -166,22 +164,21 @@ class WGOAT
 			xhr.send null
 		return
 	
-	#throw new Error "updateCalendar: Calendar Element was not found using selector #{@options.calendarElement}"
-	realUpdateCalendar: (element, html)->
-		console.log "real"
-		if !element 
-			element = document.querySelector(@options.calendarElement)
-		element.innerHTML = html
+	realUpdateCalendar: (element, html) ->
+		if typeof element is 'undefined'
+			element = document.querySelector(@options.calendarElement) || null
+		if element isnt null
+			element.innerHTML = html
+		else
+			throw new ReferenceError "Calendar Element was not found using selector #{@options.calendarElement}"
 
 	### updateCalendar ###
 	updateCalendar: (html)->
-		console.log "updating calendar"
-		cal = document.querySelector(@options.calendarElement)
-		console.log(cal)
-		if !cal
-			@attachToOnload @realUpdateCalendar(cal, html)
-		else 
-			@realUpdateCalendar(cal, html)
+		element = document.querySelector(@options.calendarElement) || null
+		if element?
+			@realUpdateCalendar(element, html)
+		else
+			@attachToOnload @realUpdateCalendar(element, html)
 	
 	###            ###
 	###  Utilities ###
