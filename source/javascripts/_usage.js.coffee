@@ -1,7 +1,7 @@
 #Instantiate
 
 wgoat = new WGOAT
-	calendarElement: document.querySelector 'section.calendar'
+	calendarElement: 'section.calendar'
 	dateRange: 
 		from: [1,1,14]
 		to: 4

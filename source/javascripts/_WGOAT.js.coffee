@@ -46,22 +46,23 @@ class WGOAT
 		endTime = new Date(event.time.endTime)
 		startTime12Hour = @timeTo12Hour(startTime,"0M")
 		endTime12Hour = @timeTo12Hour(endTime,"0M")
-		eventHTML = "event starts at #{startTime12Hour.getHours}:#{startTime12Hour.getMinutes+startTime12Hour.getPeriod}"
+		eventHTML = "<p>event starts at #{startTime12Hour.getHours}:#{startTime12Hour.getMinutes+startTime12Hour.getPeriod}</p>\n"
 	
 	### parseEvents ###
 	parseEvents: ->
 		@sort @options.sortBy
 		# do something on each event
-		eventsHTML = ""
+		eventsHTML = "<h1>Town's Events</h1>\n"
 		# ready to do awesome
 		for _day in [0..@events.keys.length - 1]
+			eventsHTML += "<h3>#{@events.keys[_day]}</h3>\n"
 			### Do stuff for each day ###
 			for _event in [0..@events.events[@events.keys[_day]].length - 1]
 				### Do stuff for day ###
 				eventsHTML += @eachEvent @events.events[@events.keys[_day]][_event]
 				#console.log(@utils.timeFromString(event.startTime).getHours())
 		
-		console.log(eventsHTML)
+		@updateCalendar eventsHTML
 	
 	### sort ###
 	sort: (method) ->
@@ -164,28 +165,38 @@ class WGOAT
 			xhr.responseType = options.responseType
 			xhr.send null
 		return
+	
+	#throw new Error "updateCalendar: Calendar Element was not found using selector #{@options.calendarElement}"
+	realUpdateCalendar: (element, html)->
+		console.log "real"
+		if !element 
+			element = document.querySelector(@options.calendarElement)
+		element.innerHTML = html
 
 	### updateCalendar ###
-	updateCalendar: ->
-		attachToOnload ->
-			cal = document.querySelector(@options.calendarElement)
-			if not cal?
-				throw new Error "updateCalendar: Calendar Element was not found using selector #{@options.calendarElement}"
-				
-
+	updateCalendar: (html)->
+		console.log "updating calendar"
+		cal = document.querySelector(@options.calendarElement)
+		console.log(cal)
+		if !cal
+			@attachToOnload @realUpdateCalendar(cal, html)
+		else 
+			@realUpdateCalendar(cal, html)
+	
 	###            ###
 	###  Utilities ###
 	###            ###
 
 	### attachToOnload ###
-	attachToOnLoad: (newFunction) ->
-		console.log("running attachToOnLoad")
-		if typeof window.onload isnt 'function'
+	attachToOnload: (newFunction) ->
+		oldOnLoad = undefined
+		console.log "attaching"
+		if typeof window.onload isnt "function"
 			window.onload = newFunction
 		else
 			oldOnLoad = window.onload
 			window.onload = ->
-				oldOnLoad()
+				oldOnLoad() if oldOnLoad
 				newFunction()
 
 	### Time From String ###
