@@ -13,6 +13,11 @@
     = javascript_include_tag "site"
     = stylesheet_link_tag "site"
   %body
-    %header
-    %div{:class => "main"}= yield
+    %section#container
+      %header#theHeader
+        %h1 W-GOAT
+      %div{:id => "main"}
+        %div#goat
+          %img{:src => "images/goat.svg"}
+        = yield
     %footer

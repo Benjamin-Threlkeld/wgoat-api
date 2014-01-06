@@ -1,0 +1,50 @@
+@import "bourbon";
+@import "neat";
+
+body {
+	font-family: helvetica, sans-serif;
+	color: #2a2a2a;
+	padding: 0;
+	margin: 0;
+	background-color: #394572;
+}
+
+#container {
+
+	background: white;
+	margin: 0 200px;
+	position: relative;
+}
+
+#main {
+	margin: 20px;
+	margin: 50px;
+}
+
+#goat {
+	@include perspective(300px);
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	& > img {
+		@include animation( goat 1s ease 0.0s infinite);
+	}
+}
+
+@include keyframes(goat) {
+	0% {
+		@include transform( translateY(0px) scaleY(1) )
+	}
+	15% {
+		@include transform( translateY(10px) scaleY(0.9) rotate(-4deg))
+	}
+	25% {
+		@include transform( translateY(0px) scaleY(1) )
+	}
+	40% {
+		@include transform( translateY(-100px) scaleY(1) rotate(10deg))
+	}
+	100% {
+		@include transform( translateY(0px) scaleY(1))
+	}
+}
