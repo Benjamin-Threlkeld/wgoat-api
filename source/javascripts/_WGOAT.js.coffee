@@ -12,6 +12,10 @@ class WGOAT
 			tags: true
 			images: true
 			sortBy: 'soonest' # most-recent
+			parsing:
+				preEvents: @preEvents
+				preEvent: @preEvent
+				eachEvent: @eachEvent
 			# thats good for now
 
 		# add params to options if any
@@ -40,27 +44,51 @@ class WGOAT
 		@events.events[fileDate] = object
 		@events.keys.push fileDate
 		return
+	### Default event parse setup ###
+	preEvents: ->
+		"<h1>Town's Events</h1>"
 
-	eachEvent: (event) ->
-		# time stuff
-		startTime = new Date(event.time.startTime)
-		endTime = new Date(event.time.endTime)
-		startTime12Hour = @timeTo12Hour(startTime,"0M")
-		endTime12Hour = @timeTo12Hour(endTime,"0M")
-		eventHTML = "<p>event starts at #{startTime12Hour.getHours}:#{startTime12Hour.getMinutes+startTime12Hour.getPeriod}</p>\n"
+	preEvent: (d) ->
+		"<h3>#{d.getDate},#{d.getMonth},#{d.getFullYear}</h3>"
+	
+	eachEvent: (event, t) ->
+		"""<p>event starts at #{t.start12Hour.getHours}:#{t.start12Hour.getMinutes+t.start12Hour.getPeriod}</p>"""
 	
 	### parseEvents ###
 	parseEvents: ->
+		# Day/Month arrays
+		weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+		weekdays_abb = ["Sun","Mon","Tues","Weds","Thurs","Fri","Sat"]
+		months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+		months_abb = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+		
 		@sort @options.sortBy
 		# do something on each event
-		eventsHTML = "<h1>Town's Events</h1>\n"
+		eventsHTML = @options.parsing.preEvent()
 		# ready to do awesome
 		for _day in [0..@events.keys.length - 1]
-			eventsHTML += "<h3>#{@events.keys[_day]}</h3>\n"
+			# run whatever function is set for
+			eventsHTML += @options.parsing.preEvent(new Date(@events.events[@events.keys[_day]])) + "\n"
+			# for custom html before the events are listed, so the category. pass the date for easy use
+			#@preEvent events.keys[_day]
 			### Do stuff for each day ###
 			for _event in [0..@events.events[@events.keys[_day]].length - 1]
+				event = @events.events[@events.keys[_day]][_event]
+				# set up time variables
+				start24Hour = new Date(event.time.startTime)
+				end24Hour = new Date(event.time.endTime)
+				start12Hour = @timeTo12Hour start24Hour, "0M" 
+				end12Hour = @timeTo12Hour end24Hour, "0M" 
+				# time object
+				T = 
+					start24Hour: start24Hour
+					end24Hour: end24Hour
+					start12Hour: start12Hour
+					end12Hour: end12Hour
+
 				### Do stuff for day ###
-				eventsHTML += @eachEvent @events.events[@events.keys[_day]][_event]
+
+				eventsHTML += @options.parsing.eachEvent event, T
 				#console.log(@utils.timeFromString(event.startTime).getHours())
 		
 		@updateCalendar eventsHTML
@@ -70,7 +98,7 @@ class WGOAT
 		switch method
 			when "most-recent" then @sort_mostRecent()
 			when "soonest" then @sort_soonest()
-			else throw new Error "Sort: no sort sort method of that sort :)"
+			else throw new Error "Sort: no sort method of that sort :)"
 	
 	### sorting methods ###
 	sort_soonest: ->
@@ -83,7 +111,6 @@ class WGOAT
 	sort_mostRecent: ->
 		return
 
-	
 	### cantThinkOfName ###
 	cantThinkOfName: () ->
 		d = @figureDateRange @options.dateRange
@@ -126,7 +153,6 @@ class WGOAT
 
 	### get files, add to object ###
 	get: (filename) ->
-		
 		@activeAjaxConnections++ # add an open connection
 		ajax = new @Ajax
 			scope: @
@@ -201,11 +227,9 @@ class WGOAT
 		# This eats a string argument that is in some form of legible time and poops out a Date Object
 		# Examples of valid times
 		# `2pm` `2Am` `1403` `2:03p`
-		#
 
 		# match |`digit`|`Passive`:|`digit``digit`|`whitespace`|`a` or `p`|case insensitive
-		Matcher = /(\d+)(?::(\d\d))?\s*([ap]?)/i
-		timeParsed = timeString.match(Matcher)
+		timeParsed = timeString.match(/(\d+)(?::(\d\d))?\s*([ap]?)/i)
 		
 		#timeParsed[0] is the first group
 		#timeParsed[1] is the hour. if it is a 24hour time minute is null
@@ -276,6 +300,13 @@ class WGOAT
 					@objectMergeRecursive obj1[k], obj2[k]
 				else
 					obj1[k] = obj2[k]
+	
+	formatDate: (d, format) ->
+		# match |`digit`|`Passive`:|`digit``digit`|`whitespace`|`a` or `p`|case insensitive
+		#timeParsed = timeString.match(/(\d+)(?::(\d\d))?\s*([ap]?)/i)
+		dateParsed = format.match(/\%/)
+		#console.log format
+		#console.log dateParsed
 
 root = window
 root.WGOAT = WGOAT
