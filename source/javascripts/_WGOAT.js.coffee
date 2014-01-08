@@ -4,8 +4,8 @@ class WGOAT
 		# default options
 		@options =
 			calendarElement: '.calendar'
-			dateRange: #day,month,two digit year
-				from: [1,1,1]
+			dateRange: #day,month,two/four digit year
+				from: [1,1,14]
 				to: 5 # days after
 			dir: 'events/'
 			links: true
@@ -16,6 +16,7 @@ class WGOAT
 				preEvents: @preEvents
 				preEvent: @preEvent
 				eachEvent: @eachEvent
+				noEvents: @noEvents
 			# thats good for now
 
 		# add params to options if any
@@ -32,65 +33,69 @@ class WGOAT
 	parseObject: (fileDate, object) ->
 		# this could be where it formats the dates and times, validate strings and stuff
 		# loop over the file of events
-		for event in [0..object.length - 1]
-			# insert props to object
-			object[event]['time'] = {}
-			if object[event].startTime? then object[event].time['startTime'] = @timeFromString(object[event].startTime).getTime()
-			if object[event].endTime? then object[event].time['endTime'] = @timeFromString(object[event].endTime).getTime()
-			# will be usefull when sorting most-recent
-			object[event].date = @eventsDates.dates[fileDate]
-			object[event].fromFile = fileDate
+		if object?
+			for event in [0..object.length - 1]
+				# insert props to object
+				object[event]['time'] = {}
+				if object[event].startTime? then object[event].time['startTime'] = @timeFromString(object[event].startTime).getTime()
+				if object[event].endTime? then object[event].time['endTime'] = @timeFromString(object[event].endTime).getTime()
+				# will be usefull when sorting most-recent
+				object[event].date = @eventsDates.dates[fileDate]
+				object[event].fromFile = fileDate
 
-		@events.events[fileDate] = object
-		@events.keys.push fileDate
+			@events.events[fileDate] = object
+			@events.keys.push fileDate
 		return
+	
 	### Default event parse setup ###
 	preEvents: ->
 		"<h1>Town's Events</h1>"
 
 	preEvent: (d) ->
-		"<h3>#{d.getDate},#{d.getMonth},#{d.getFullYear}</h3>"
+		"<h3>#{d.getDate()} #{d.getMonth()} #{d.getFullYear()}</h3>"
 	
 	eachEvent: (event, t) ->
 		"""<p>event starts at #{t.start12Hour.getHours}:#{t.start12Hour.getMinutes+t.start12Hour.getPeriod}</p>"""
+
+	noEvents: ->
+		"""
+		<p>Boo hoo! get over it, be awesome and <a href="#createEvent">Create An Event</a>!</p>
+		<p>Good luck, that link, really doesn't have any function</p>
+		"""
 	
 	### parseEvents ###
 	parseEvents: ->
-		# Day/Month arrays
-		weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
-		weekdays_abb = ["Sun","Mon","Tues","Weds","Thurs","Fri","Sat"]
-		months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
-		months_abb = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-		
-		@sort @options.sortBy
-		# do something on each event
-		eventsHTML = @options.parsing.preEvent()
-		# ready to do awesome
-		for _day in [0..@events.keys.length - 1]
-			# run whatever function is set for
-			eventsHTML += @options.parsing.preEvent(new Date(@events.events[@events.keys[_day]])) + "\n"
-			# for custom html before the events are listed, so the category. pass the date for easy use
-			#@preEvent events.keys[_day]
-			### Do stuff for each day ###
-			for _event in [0..@events.events[@events.keys[_day]].length - 1]
-				event = @events.events[@events.keys[_day]][_event]
-				# set up time variables
-				start24Hour = new Date(event.time.startTime)
-				end24Hour = new Date(event.time.endTime)
-				start12Hour = @timeTo12Hour start24Hour, "0M" 
-				end12Hour = @timeTo12Hour end24Hour, "0M" 
-				# time object
-				T = 
-					start24Hour: start24Hour
-					end24Hour: end24Hour
-					start12Hour: start12Hour
-					end12Hour: end12Hour
+		if @events.keys[0]?
+			@sort @options.sortBy
+			# do something on each event
+			eventsHTML = @options.parsing.preEvents()
+			# ready to do awesome
+			for _day in [0..@events.keys.length - 1]
+				# run whatever function is set for
+				date = new Date(@eventsDates.dates[@eventsDates.keys[_day]])
+				eventsHTML += @options.parsing.preEvent(date) + "\n"
+				# for custom html before the events are listed, so the category. pass the date for easy use
+				### Do stuff for each day ###
+				for _event in [0..@events.events[@events.keys[_day]].length - 1]
+					event = @events.events[@events.keys[_day]][_event]
+					# set up time variables
+					start24Hour = new Date(event.time.startTime)
+					end24Hour = new Date(event.time.endTime)
+					start12Hour = @timeTo12Hour start24Hour, "0M" 
+					end12Hour = @timeTo12Hour end24Hour, "0M" 
+					# time object
+					T = 
+						start24Hour: start24Hour
+						end24Hour: end24Hour
+						start12Hour: start12Hour
+						end12Hour: end12Hour
 
-				### Do stuff for day ###
+					### Do stuff for day ###
 
-				eventsHTML += @options.parsing.eachEvent event, T
-				#console.log(@utils.timeFromString(event.startTime).getHours())
-		
+					eventsHTML += @options.parsing.eachEvent(event, T)
+					#console.log(@utils.timeFromString(event.startTime).getHours())
+		else 
+			eventsHTML = @options.parsing.noEvents()
 		@updateCalendar eventsHTML
 	
 	### sort ###
@@ -121,7 +126,7 @@ class WGOAT
 			# add a day to the date
 			dateOffset.setDate d.from.getDate() + day
 			# format date
-			name = "#{dateOffset.getDate()}.#{dateOffset.getMonth()}.#{dateOffset.getFullYear() - 2000}.json"
+			name = "#{dateOffset.getDate()}.#{dateOffset.getMonth()+1}.#{dateOffset.getFullYear() - 2000}.json"
 			# add formatted date and date time to object
 			datesForFiles.dates[name] = dateOffset.getTime()
 			# add formatted date as keys to array
@@ -138,8 +143,12 @@ class WGOAT
 	### abstracting dateRange ###
 	figureDateRange: (d) ->
 		# basic functionality. Not sure how much error checking should be done
-		# new date from array
-		from = new Date((if d.from[2] > 99 then d.from[2] else 2000 + d.from[2]), d.from[1], d.from[0])
+		# new date from array in js form
+		if d.from?
+			from = new Date((if d.from[2] > 99 then d.from[2] else 2000 + d.from[2]), d.from[1]-1, d.from[0])
+		else
+			from = new Date()
+		#console.log from.getDate() + "." + from.getMonth() + "." + from.getFullYear()
 		to = d.to
 
 		#if Object.prototype.toString.call d.from is '[object Array]' && d.from.length < 4
@@ -157,7 +166,7 @@ class WGOAT
 		ajax = new @Ajax
 			scope: @
 			#requestHeaders: [["filename", filename]]
-			uri: window.location + @options.dir + filename,
+			uri: "/" + @options.dir + filename
 			responseType: 'json'
 			callback: (res) ->
 				if res.readyState is 2
@@ -183,6 +192,8 @@ class WGOAT
 
 		@doGet = ->
 			xhr.open "GET", options.uri, true
+			xhr.timeout = 4000
+			xhr.ontimeout = options.ontimeout || null
 			if typeof options.requestHeaders is 'object'
 				for r,i in options.requestHeaders
 					xhr.setRequestHeader(options.requestHeaders[i][0],options.requestHeaders[i][1])
@@ -213,7 +224,6 @@ class WGOAT
 	### attachToOnload ###
 	attachToOnload: (newFunction) ->
 		oldOnLoad = undefined
-		console.log "attaching"
 		if typeof window.onload isnt "function"
 			window.onload = newFunction
 		else
@@ -301,12 +311,88 @@ class WGOAT
 				else
 					obj1[k] = obj2[k]
 	
+	### Format Date (under development) ###
 	formatDate: (d, format) ->
-		# match |`digit`|`Passive`:|`digit``digit`|`whitespace`|`a` or `p`|case insensitive
-		#timeParsed = timeString.match(/(\d+)(?::(\d\d))?\s*([ap]?)/i)
-		dateParsed = format.match(/\%/)
-		#console.log format
-		#console.log dateParsed
+		# Day/Month arrays
+		weekdays = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+		months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+		month = d.getMonth()
+		day = d.getDay()
+		date = d.getDate()
+		year = d.getFullYear()
+		
+		dateParsed = format
+			.replace /%d/g, ->
+				### Week day Stuff ###
+				# `d` Day of the month, 2 digits with leading zeros | 01 to 31
+				if date < 10 then "0" + date else date
+			
+			.replace /%D/g, ->
+				# `D` A textual representation of a day, three letters | Mon through Sun
+				weekdays[day].slice 0, 3
+			
+			.replace /%j/g, ->
+				# `j` Day of the month without leading zeros | 1 to 31
+				date
+			
+			.replace /%l/g, ->
+				# 'l' A full textual representation of the day of the week | Sunday through Saturday
+				weekdays[day]
+			
+			.replace /%S/g, ->
+				# `S` English ordinal suffix for the day of the month, 2 characters | st, nd, rd or th. Works well with `j`
+				switch date
+					when 1 then "st"
+					when 2 then "nd"
+					when 3 then "rd"
+					else "th"
+			
+			.replace /%w/g, ->
+				# `w` Numeric representation of the day of the week | 0 (for Sunday) through 6 (for Saturday)
+				day
+
+			.replace /%z/g, ->
+				# `z` The day of the year (starting from 0) | 0 through 365
+				Math.ceil((d - new Date(year,0,1)) / 86400000)
+
+			.replace /%F/g, ->
+				### Month stuff ###
+				# `F` A full textual representation of a month, such as January or March | January through December
+				months[month]
+
+			.replace /%F/g, ->
+				# `m` Numeric representation of a month, with leading zeros | 01 through 12
+				if month + 1 < 10 then "0" + (month + 1) else month + 1
+			
+			.replace /%M/g, ->
+				# `M` A short textual representation of a month, three letters | Jan through Dec
+				months[month].slice 0, 3
+			
+			.replace /%n/g, ->
+				# `n` Numeric representation of a month, without leading zeros | 1 through 12
+				month
+			
+			.replace /%t/g, ->
+				# `t` Number of days in the given month | 28 through 31
+				new Date(d.getYear(), month, 0).getDate()
+			
+			.replace /%L/g, ->
+				### Year Stuff ###
+				# `L` Whether it's a leap year | 1 if it is a leap year, 0 otherwise.
+				new Date(year, 1, 29).getMonth() is 1
+			
+			.replace /%Y/g, ->
+				# `Y` A full numeric representation of a year, 4 digits | Examples: 1999 or 2003
+				year
+			
+			.replace /%y/g, ->
+				# `y` A two digit representation of a year | Examples: 99 or 03
+				y = year.toString
+				# Or if all the events are "new" (grater then the year 2001
+				# d.getFullYear() - 2000
+				l = y.length
+				y.slice l - 2, l
+		dateParsed
 
 root = window
 root.WGOAT = WGOAT

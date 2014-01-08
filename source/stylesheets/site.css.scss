@@ -48,3 +48,12 @@ body {
 		@include transform( translateY(0px) scaleY(1))
 	}
 }
+.event{
+	width: 600px;
+	max-height: 50px;
+}
+.emo{
+	position: relative;
+	display: inline-block;
+	@include transform( rotate(90deg) );
+}
