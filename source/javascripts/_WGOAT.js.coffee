@@ -5,7 +5,7 @@ class WGOAT
 		@options =
 			calendarElement: '.calendar'
 			dateRange: #day,month,two/four digit year
-				from: [1,1,14]
+				#from: [1,1,14] is optional
 				to: 5 # days after
 			dir: 'events/'
 			links: true
@@ -23,7 +23,7 @@ class WGOAT
 		@objectMergeRecursive @options, params;
 
 	### Green light... Go Go Go! ###
-	run: ->
+	run: =>
 		@activeAjaxConnections = 0
 		@events = {events: {},keys: []}
 		@eventsDates = @cantThinkOfName()
@@ -201,6 +201,7 @@ class WGOAT
 			xhr.send null
 		return
 	
+	# if calendar does not exist by the time the script finishes attach to on load then try
 	realUpdateCalendar: (element, html) ->
 		if typeof element is 'undefined'
 			element = document.querySelector(@options.calendarElement) || null
@@ -231,7 +232,7 @@ class WGOAT
 			window.onload = ->
 				oldOnLoad() if oldOnLoad
 				newFunction()
-
+	
 	### Time From String ###
 	timeFromString: (timeString) ->
 		# This eats a string argument that is in some form of legible time and poops out a Date Object
@@ -393,6 +394,11 @@ class WGOAT
 				l = y.length
 				y.slice l - 2, l
 		dateParsed
+	
+	### Set Option ###
+	set: (options) ->
+		@objectMergeRecursive @options, options
+
 
 root = window
 root.WGOAT = WGOAT

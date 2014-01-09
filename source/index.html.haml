@@ -2,9 +2,14 @@
 title: WGOAT API
 description: WGOAT, exactly how it sounds... What's Going On Around Town.
 ---
-
 %h1 Welcome To the WGOAT API
 %p 
 	Best viewed without styling 
 	%span.emo :D
+%div#settings
+	%label{:for => "from"} from:
+	%input{:type => "text", :name => "from"}
+	%label{:for => "to"} to:
+	%input{:type => "text", :name => "to"}
+	%input{:type => "button", :name => "update", :value => "update"}
 %section.calendar
