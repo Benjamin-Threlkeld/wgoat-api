@@ -16,6 +16,7 @@ class WGOAT
 				preEvents: @preEvents
 				preEvent: @preEvent
 				eachEvent: @eachEvent
+				postEvent: @postEvent
 				noEvents: @noEvents
 			# thats good for now
 
@@ -57,6 +58,9 @@ class WGOAT
 	eachEvent: (event, t) ->
 		"""<p>event starts at #{t.start12Hour.getHours}:#{t.start12Hour.getMinutes+t.start12Hour.getPeriod}</p>"""
 
+	postEvent: (d) ->
+		"post event"
+
 	noEvents: ->
 		"""
 		<p>Boo hoo! get over it, be awesome and <a href="#createEvent">Create An Event</a>!</p>
@@ -94,6 +98,7 @@ class WGOAT
 
 					eventsHTML += @options.parsing.eachEvent(event, T)
 					#console.log(@utils.timeFromString(event.startTime).getHours())
+				eventsHTML += @options.parsing.postEvent(date) + "\n"		
 		else 
 			eventsHTML = @options.parsing.noEvents()
 		@updateCalendar eventsHTML
