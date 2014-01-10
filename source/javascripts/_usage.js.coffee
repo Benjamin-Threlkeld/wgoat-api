@@ -35,6 +35,8 @@ wgoat = new WGOAT
 			preEvents()
 		eachEvent: (event, t) ->
 			eachEvent(event, t)
+		noEvents: ->
+			noEvents()
 wgoat.run()
 window.w = wgoat
 
