@@ -328,6 +328,8 @@ class WGOAT
 		year = d.getFullYear()
 		
 		dateParsed = format
+			# to use more than one for a function like %Mon to represent 3 letter month.
+			# use /%(thing1|thing2)/g
 			.replace /%d/g, ->
 				### Week day Stuff ###
 				# `d` Day of the month, 2 digits with leading zeros | 01 to 31
