@@ -1,35 +1,4 @@
 if document.title is "Create Event"
-	# Only God and I know what I was thinking when I wrote this
-	crazySimpleParse = (obj) ->
-		crazySimpleParse.recurse(obj)
-	
-	crazySimpleParse.recurse = (obj, parentName) ->
-		if parentName?
-				# create group
-				html += """<div data-parent-name="#{parentName}">\n"""
-				@recursing obj
-				html += """</div>"""
-		
-		else @recursing obj
-	crazySimpleParse.recursing = (obj) ->
-		for prop of obj
-			if obj[prop] instanceof Array
-				
-				if obj[prop][0] is 'select'
-					html += """<select name="#{prop}">\n"""
-					# this is a select element the options are
-					for i in [2..obj[prop].length - 1] by 2
-						selected = ""
-						if obj[prop][i] is obj[prop][1]
-							selected = " selected"
-						html += """  <option value="#{obj[prop][i + 1]}"#{selected}>#{obj[prop][i]}</option>\n"""
-					html += """</select>\n"""
-				
-				else if obj[prop][0] is 'input'
-					html += """  <input type="text" name="#{prop}" value="#{obj[prop][1]}" placeholder="#{obj[prop][2]}">\n"""
-		
-			else if obj[prop] instanceof Object
-				@recurse obj[prop], prop
 	options = {
 		# first is the index second is the value third is placeholder
 		title: ["input", "title test", "Title"]
@@ -40,8 +9,7 @@ if document.title is "Create Event"
 			lon: ["input", "", "Lon"]
 	}
 
-	html = ""
-	crazySimpleParse options
+	html = crazySimpleParse options
 
 	window.onload = ->
 		app = document.getElementById("app")
@@ -62,7 +30,7 @@ if document.title is "Create Event"
 
 		resultEle = document.getElementById "result"
 		
-		inter = (obj, obj2)->
+		inter = (obj, obj2) ->
 			for prop of obj
 				if obj[prop][0]?
 					obj[prop][1] = obj2[prop].value
@@ -77,5 +45,5 @@ if document.title is "Create Event"
 			if lastUpdate isnt thisUpdate
 				resultEle.value = thisUpdate
 				lastUpdate = thisUpdate
-		, 10)
+		, 200)
 
