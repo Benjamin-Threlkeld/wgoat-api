@@ -18,7 +18,6 @@
       %header#theHeader
         %h1 W-GOAT
       %div{:id => "main"}
-        %div#goat
-          %img{:src => "images/goat.svg"}
+        = yield_content :goat
         = yield
     %footer
