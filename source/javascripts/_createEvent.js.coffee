@@ -12,38 +12,14 @@ if document.title is "Create Event"
 	html = crazySimpleParse options
 
 	window.onload = ->
-		app = document.getElementById("app")
-		app.innerHTML = html
-		inputs = {}
-		elements = app.querySelectorAll("input, select, textarea")
-		for element in [0..elements.length - 1]
-			pNode = elements[element].parentNode.dataset.parentName || null
-			if pNode is null
-				inputs[elements[element].name] = elements[element]
-			else
-				# fix nested elements later
-				if typeof inputs[pNode] is 'undefined'
-					inputs[pNode] = {}
-					inputs[pNode][elements[element].name] = elements[element]
-				else
-					inputs[pNode][elements[element].name] = elements[element]
-
-		resultEle = document.getElementById "result"
-		
-		inter = (obj, obj2) ->
-			for prop of obj
-				if obj[prop][0]?
-					obj[prop][1] = obj2[prop].value
-				else
-					inter obj[prop], obj2[prop]
-						
+		resultElement = document.getElementById("result")
 		lastUpdate = ""
-		setInterval(->
-			#console.log options
-			inter options, inputs
-			thisUpdate = JSON.stringify(options,null," ")
+		callback = ->
+			thisUpdate = JSON.stringify(options, null, " ")
 			if lastUpdate isnt thisUpdate
-				resultEle.value = thisUpdate
+				resultElement.value = thisUpdate
 				lastUpdate = thisUpdate
-		, 200)
+		app = document.getElementById "app"
+		app.innerHTML = html
 
+		LiveHTML_Object("app", options, "result", 200, callback)
