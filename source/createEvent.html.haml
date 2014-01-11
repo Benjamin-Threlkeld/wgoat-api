@@ -2,6 +2,6 @@
 title: Create Event
 ---
 
-%section#app
+%form#app{:onsubmit => "return generate(this);", :method => "post"}
 
-%textarea#result{:rows => 10, :cols => 50}
+%textarea#result{:rows => 10, :cols => 50, :editable => false}
