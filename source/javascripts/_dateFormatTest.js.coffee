@@ -1,4 +1,4 @@
-if  document.title is "Format Date Function Testing"
+if document.title is "Format Date Function Testing"
 	wgoat = new WGOAT()
 
 	wgoat.attachToOnload ->
